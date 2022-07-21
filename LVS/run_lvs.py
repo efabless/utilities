@@ -61,8 +61,14 @@ def run_lvs(netlist_1, netlist_2, output_dir, lvs_type):
     os.environ['NETGEN_COLUMNS'] = "60"
     netlist1_name = os.path.basename(netlist_1).split('.')[0]
 
-    subprocess.run(['netgen', '-batch', 'lvs', f'{output_dir}/{netlist1_name}-gds-extracted.spice {netlist1_name}',
-		f'{netlist_2} {netlist1_name}', f'{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl', 
+    netgen_setup_file = f"{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl"
+    if lvs_type == "gds" or lvs_type == "mag":
+        spice_file = f"{output_dir}/{netlist1_name}-{lvs_type}-extracted.spice"
+
+    subprocess.run(['netgen', '-batch', 'lvs', 
+        f'{spice_file} {netlist1_name}',
+		f'{netlist_2} {netlist1_name}', 
+        f'{netgen_setup_file}', 
         f'{output_dir}/{netlist1_name}-{lvs_type}-vs-verilog.out'])
 
 def run_ext(input1, input2, output):
@@ -75,9 +81,8 @@ def run_ext(input1, input2, output):
     History:
         created 07/21/2022
     """
-
-    input1_type = os.path.basename(input1).split('.')[1]
-    input2_type = os.path.basename(input2).split('.')[1]
+    input1_type = get_file_type(input1)
+    input2_type = get_file_type(input2)
 
     if input1_type == "gds" or input2_type == "gds":
         lvs_type = "gds"
@@ -96,6 +101,28 @@ def run_ext(input1, input2, output):
         elif input2_type == "mag":
             extract_mag(input2, output)
             run_lvs(input2, input1, output, lvs_type)
+
+def get_file_type(file):
+    """find file type
+
+    Args:
+        file (string): file to get its type
+
+    Returns:
+        string: file type
+    """
+    file_ext = os.path.basename(file).split('.')[1]
+
+    if file_ext == "v":
+        file_type = "verilog"
+    elif file_ext == "spice":
+        file_type = "spice"
+    elif file_ext == "gds":
+        file_type = "gds"
+    elif file_ext == "mag":
+        file_type = "mag"
+    
+    return file_type
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process LVS check. Layout will always be on the left')
