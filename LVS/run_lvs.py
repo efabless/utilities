@@ -24,7 +24,14 @@ def extract(file_dict, output_dir):
     os.environ['ext_out'] = output_dir
 
     if file_dict.get("file_extraction") is True:
-        subprocess.run(["magic", "-dnull", "-noconsole", "-rcfile", f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc", f"extract_{file_dict['file_type']}.tcl"])
+        std_out = subprocess.run(["magic", "-dnull", "-noconsole",
+            "-rcfile", f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc", 
+            f"extract_{file_dict['file_type']}.tcl"],
+            stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        decoded_output = std_out.stdout.decode('utf-8')
+        print(decoded_output, end='')
+        write_stdout_file(f'{output_dir}/{file_dict["file_name"]}-magic_extraction.log', decoded_output)
+
     elif file_dict.get("file_extraction") is None:
         raise TypeError(f"LVS on {file_dict['file_type']} files not supported")
 
@@ -46,27 +53,42 @@ def run_lvs(netlist_1, netlist_2, output_dir):
         os.environ['MAGIC_EXT_USE_GDS'] = "1"
 
     os.environ['NETGEN_COLUMNS'] = "60"
-    netlist1_name = os.path.basename(netlist_1.get("file_path")).split('.')[0]
-    netlist2_name = os.path.basename(netlist_2.get("file_path")).split('.')[0]
     netgen_setup_file = f"{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl"
 
     if netlist_1.get("file_extraction") is True:
-        spice_file1 = f"{output_dir}/{netlist1_name}-{netlist_1['file_type']}-extracted.spice"
+        spice_file1 = f"{output_dir}/{netlist_1['file_name']}-{netlist_1['file_type']}-extracted.spice"
     else:
         spice_file1 = netlist_1.get("file_path")
     
     if netlist_2.get("file_extraction") is True:
-        spice_file2 = f"{output_dir}/{netlist2_name}-{netlist_2['file_type']}-extracted.spice"
+        spice_file2 = f"{output_dir}/{netlist_2['file_name']}-{netlist_2['file_type']}-extracted.spice"
     else:
         spice_file2 = netlist_2.get("file_path")
 
-    subprocess.run(['netgen', '-batch', 'lvs', 
-        f'{spice_file1} {netlist1_name}',
-		f'{spice_file2} {netlist1_name}', 
+    
+    std_out = subprocess.run(['netgen', '-batch', 'lvs', 
+        f'{spice_file1} {netlist_1["file_name"]}',
+        f'{spice_file2} {netlist_1["file_name"]}', 
         f'{netgen_setup_file}', 
-        f'{output_dir}/{netlist1_name}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out'])
+        f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out'], 
+        stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    decoded_output = std_out.stdout.decode('utf-8')
+    print(decoded_output, end='')
 
-def set_ext_files(file_type):
+    write_stdout_file(f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.log', decoded_output)
+
+def write_stdout_file(output_file, content):
+    """open and write stdout to file
+
+    Args:
+        output_file (string): path to output file
+        content (string): content of file
+    """
+    std_out_file = open(output_file, "w")
+    std_out_file.write(content)
+    std_out_file.close()
+
+def is_extractable(file_type):
     """checks if the file can be extracted
 
     Args:
@@ -95,22 +117,28 @@ def set_db(file1_path, file2_path):
         file2 (string): path to second input file
 
     Returns:
-        tuple (string, bool): tuple containing (file1_path, if the file1 can be extracted) and (file2_path, if the file1 can be extracted)
+        dictionary (string, string, string, bool): dictionary containing (file_path, file_type, file_name, file_extraction)
     History:
         created 07/24/2022
     """
-    file1_type = os.path.splitext(file1_path)[1].split('.')[1]
-    file2_type = os.path.splitext(file2_path)[1].split('.')[1]
+    file1 = os.path.splitext(file1_path)
+    file2 = os.path.splitext(file2_path)
+    file1_type = os.path.basename(file1[1]).split('.')[1]
+    file2_type = os.path.basename(file2[1]).split('.')[1]
+    file1_name = os.path.basename(file1[0])
+    file2_name = os.path.basename(file2[0])
     
     file1_db = {
         "file_path" : file1_path,
         "file_type" : file1_type,
-        "file_extraction" : set_ext_files(file1_type)
+        "file_name" : file1_name,
+        "file_extraction" : is_extractable(file1_type)
     }
     file2_db = {
         "file_path" : file2_path,
         "file_type" : file2_type,
-        "file_extraction" : set_ext_files(file2_type)
+        "file_name" : file2_name,
+        "file_extraction" : is_extractable(file2_type)
     }
 
     return file1_db, file2_db
