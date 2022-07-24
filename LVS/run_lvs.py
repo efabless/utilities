@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# This script is a wrapper to run full LVS using gds, mag, maglef
+# This script is a wrapper to run full LVS using gds, mag, maglef, verilog GL netlist, spice
 
 import subprocess
 import os
@@ -61,7 +61,7 @@ def run_lvs(netlist_1, netlist_2, output_dir):
         f'{spice_file1} {netlist1_name}',
 		f'{spice_file2} {netlist1_name}', 
         f'{netgen_setup_file}', 
-        f'{output_dir}/{netlist1_name}-{netlist_1["file_type"]}-vs-verilog.out'])
+        f'{output_dir}/{netlist1_name}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out'])
 
 def set_ext_files(file_type):
     """checks if the file can be extracted
