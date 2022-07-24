@@ -22,12 +22,13 @@ def extract(file_dict, output_dir):
     """
     os.environ['ext_inp1'] = file_dict.get("file_path")
     os.environ['ext_out'] = output_dir
+    magic_ext_command = ["magic", "-dnull", "-noconsole",
+                f"-rcfile", f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc", 
+                f"extract_{file_dict['file_type']}.tcl"]
+
 
     if file_dict.get("file_extraction") is True:
-        std_out = subprocess.run(["magic", "-dnull", "-noconsole",
-            "-rcfile", f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc", 
-            f"extract_{file_dict['file_type']}.tcl"],
-            stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        std_out = subprocess.run(magic_ext_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         decoded_output = std_out.stdout.decode('utf-8')
         print(decoded_output, end='')
         write_stdout_file(f'{output_dir}/{file_dict["file_name"]}-magic_extraction.log', decoded_output)
@@ -51,7 +52,6 @@ def run_lvs(netlist_1, netlist_2, output_dir):
 
     if netlist_1.get("file_type") == "gds" or netlist_2.get("file_type") == "gds":
         os.environ['MAGIC_EXT_USE_GDS'] = "1"
-
     os.environ['NETGEN_COLUMNS'] = "60"
     netgen_setup_file = f"{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl"
 
@@ -65,13 +65,13 @@ def run_lvs(netlist_1, netlist_2, output_dir):
     else:
         spice_file2 = netlist_2.get("file_path")
 
-    
-    std_out = subprocess.run(['netgen', '-batch', 'lvs', 
-        f'{spice_file1} {netlist_1["file_name"]}',
-        f'{spice_file2} {netlist_1["file_name"]}', 
-        f'{netgen_setup_file}', 
-        f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out'], 
-        stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    netgen_LVS_command = ['netgen', '-batch', 'lvs', 
+                f'{spice_file1} {netlist_1["file_name"]}',
+                f'{spice_file2} {netlist_1["file_name"]}', 
+                f'{netgen_setup_file}', 
+                f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out']
+
+    std_out = subprocess.run(netgen_LVS_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     decoded_output = std_out.stdout.decode('utf-8')
     print(decoded_output, end='')
 
