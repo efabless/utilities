@@ -5,14 +5,18 @@
 import subprocess
 import os
 import argparse
+import warnings
 
 
-def extract(file_dict, output_dir):
+def extract(
+    file_dict: dict,
+    output_dir: str
+):
     """extract spice using magic
 
     Args:
         file_dict (dict): dictionary of input file
-        output_dir (string): output directory
+        output_dir (str): output directory
     Raises:
         TypeError: if LVS doesn't support this file type
     Output:
@@ -47,13 +51,17 @@ def extract(file_dict, output_dir):
         raise TypeError(f"LVS on {file_dict['file_type']} files not supported")
 
 
-def run_lvs(netlist_1, netlist_2, output_dir):
+def run_lvs(
+    netlist_1: dict,
+    netlist_2: dict,
+    output_dir: str
+):
     """run generic LVS
 
     Args:
         netlist_1 (dict): netlist 1 dictionary
         netlist_2 (dict): netlist 2 dictionary
-        output_dir (string): output directory
+        output_dir (str): output directory
     Output:
         Runs LVS and generates output log under the output directory
     History:
@@ -97,23 +105,28 @@ def run_lvs(netlist_1, netlist_2, output_dir):
     )
 
 
-def write_stdout_file(output_file, content):
+def write_stdout_file(
+    output_file: str,
+    content: str
+):
     """open and write stdout to file
 
     Args:
-        output_file (string): path to output file
-        content (string): content of file
+        output_file (str): path to output file
+        content (str): content of file
     """
     std_out_file = open(output_file, "w")
     std_out_file.write(content)
     std_out_file.close()
 
 
-def is_extractable(file_type):
+def is_extractable(
+    file_type: str
+):
     """checks if the file can be extracted
 
     Args:
-        file_type (string): checks if the file type can be extracted
+        file_type (str): checks if the file type can be extracted
 
     Returns:
         [bool]: bool to reflect if the file type can be extracted
@@ -130,15 +143,18 @@ def is_extractable(file_type):
     return file_ext
 
 
-def create_db(file1_path, file2_path):
+def create_db(
+    file1_path: str,
+    file2_path: str
+):
     """sets the tuples for the file inputs
 
     Args:
-        file1 (string): path to first input file
-        file2 (string): path to second input file
+        file1 (str): path to first input file
+        file2 (str): path to second input file
 
     Returns:
-        dictionary (string, string, string, bool): dictionary containing (file_path, file_type, file_name, file_extraction)
+        dictionary (str, str, str, bool): dictionary containing (file_path, file_type, file_name, file_extraction)
     History:
         created 07/24/2022
     """
@@ -164,6 +180,29 @@ def create_db(file1_path, file2_path):
 
     return file1_db, file2_db
 
+def check_pdk():
+    """check PDK_ROOT and PDK env variables
+
+    Raises:
+        FileNotFoundError: PDK_ROOT is not exported or doesn't exist
+
+    Returns:
+        [str]: PDK_ROOT, PDK
+    History:
+        created 07/24/2022
+    """
+    pdk_root = os.getenv("PDK_ROOT")
+    pdk = os.getenv("PDK")
+    if pdk_root is None and os.path.isdir(pdk_root):
+        raise FileNotFoundError(
+            "PDK_ROOT doesn't exist, please export PDK_ROOT to the right pdk path"
+        )
+
+    if pdk is None or os.path.isdir(pdk):
+        warnings.warn("PDK is not exported, will default to sky130B")
+        pdk = "sky130B"
+
+    return pdk_root, pdk
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -178,8 +217,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-o", "--output", help="output file", required=True)
     args = parser.parse_args()
-    PDK_ROOT = os.getenv("PDK_ROOT")
-    PDK = os.getenv("PDK")
+    PDK_ROOT, PDK = check_pdk()
 
     input1 = os.path.abspath(args.input[0])
     input2 = os.path.abspath(args.input[1])
