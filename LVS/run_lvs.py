@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# This script is a wrapper to run full LVS using gds, mag, maglef, verilog GL netlist, spice
+# This script is a wrapper to run full LVS using gds, mag, maglef, verilog GL netlist, spice, cdl
 
 import subprocess
 import os
@@ -12,6 +12,8 @@ def extract(file_dict, output_dir):
     Args:
         file_dict (dict): dictionary of input file
         output_dir (string): output directory
+    Raises:
+        TypeError: if LVS doesn't support this file type
     Output:
         creates a tmp_ext directory under the output directory and dumps the .ext files there
         generates the .spice netlist under the output directory
@@ -42,11 +44,12 @@ def run_lvs(netlist_1, netlist_2, output_dir):
 
     if netlist_1.get("file_type") == "gds" or netlist_2.get("file_type") == "gds":
         os.environ['MAGIC_EXT_USE_GDS'] = "1"
+
     os.environ['NETGEN_COLUMNS'] = "60"
     netlist1_name = os.path.basename(netlist_1.get("file_path")).split('.')[0]
     netlist2_name = os.path.basename(netlist_2.get("file_path")).split('.')[0]
-
     netgen_setup_file = f"{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl"
+
     if netlist_1.get("file_extraction") is True:
         spice_file1 = f"{output_dir}/{netlist1_name}-{netlist_1['file_type']}-extracted.spice"
     else:
@@ -71,10 +74,12 @@ def set_ext_files(file_type):
 
     Returns:
         [bool]: bool to reflect if the file type can be extracted
+    History:
+        created 07/24/2022
     """
     if file_type == "gds" or file_type == "mag":
         file_ext = True
-    elif file_type == "spice" or file_type == "v":
+    elif file_type == "spice" or file_type == "v" or file_type == "cdl":
         file_ext = False
     else:
         file_ext = None
@@ -94,8 +99,8 @@ def set_db(file1_path, file2_path):
     History:
         created 07/24/2022
     """
-    file1_type = os.path.basename(file1_path).split('.')[1]
-    file2_type = os.path.basename(file2_path).split('.')[1]
+    file1_type = os.path.splitext(file1_path)[1].split('.')[1]
+    file2_type = os.path.splitext(file2_path)[1].split('.')[1]
     
     file1_db = {
         "file_path" : file1_path,
