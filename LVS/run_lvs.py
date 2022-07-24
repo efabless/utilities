@@ -6,6 +6,7 @@ import subprocess
 import os
 import argparse
 
+
 def extract(file_dict, output_dir):
     """extract spice using magic
 
@@ -20,18 +21,27 @@ def extract(file_dict, output_dir):
     History:
         created 07/24/2022
     """
-    os.environ['ext_inp1'] = file_dict.get("file_path")
-    os.environ['ext_out'] = output_dir
-    magic_ext_command = ["magic", "-dnull", "-noconsole",
-                f"-rcfile", f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc", 
-                f"extract_{file_dict['file_type']}.tcl"]
-
+    os.environ["ext_inp1"] = file_dict.get("file_path")
+    os.environ["ext_out"] = output_dir
+    magic_ext_command = [
+        "magic",
+        "-dnull",
+        "-noconsole",
+        "-rcfile",
+        f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc",
+        f"extract_{file_dict['file_type']}.tcl",
+    ]
 
     if file_dict.get("file_extraction") is True:
-        std_out = subprocess.run(magic_ext_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-        decoded_output = std_out.stdout.decode('utf-8')
-        print(decoded_output, end='')
-        write_stdout_file(f'{output_dir}/{file_dict["file_name"]}-magic_extraction.log', decoded_output)
+        std_out = subprocess.run(
+            magic_ext_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
+        )
+        decoded_output = std_out.stdout.decode("utf-8")
+        print(decoded_output, end="")
+        write_stdout_file(
+            f'{output_dir}/{file_dict["file_name"]}-magic_extraction.log',
+            decoded_output,
+        )
 
     elif file_dict.get("file_extraction") is None:
         raise TypeError(f"LVS on {file_dict['file_type']} files not supported")
@@ -51,31 +61,41 @@ def run_lvs(netlist_1, netlist_2, output_dir):
     """
 
     if netlist_1.get("file_type") == "gds" or netlist_2.get("file_type") == "gds":
-        os.environ['MAGIC_EXT_USE_GDS'] = "1"
-    os.environ['NETGEN_COLUMNS'] = "60"
+        os.environ["MAGIC_EXT_USE_GDS"] = "1"
+    os.environ["NETGEN_COLUMNS"] = "60"
     netgen_setup_file = f"{PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl"
 
     if netlist_1.get("file_extraction") is True:
         spice_file1 = f"{output_dir}/{netlist_1['file_name']}-{netlist_1['file_type']}-extracted.spice"
     else:
         spice_file1 = netlist_1.get("file_path")
-    
+
     if netlist_2.get("file_extraction") is True:
         spice_file2 = f"{output_dir}/{netlist_2['file_name']}-{netlist_2['file_type']}-extracted.spice"
     else:
         spice_file2 = netlist_2.get("file_path")
 
-    netgen_LVS_command = ['netgen', '-batch', 'lvs', 
-                f'{spice_file1} {netlist_1["file_name"]}',
-                f'{spice_file2} {netlist_1["file_name"]}', 
-                f'{netgen_setup_file}', 
-                f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out']
+    netgen_LVS_command = [
+        "netgen",
+        "-batch",
+        "lvs",
+        f'{spice_file1} {netlist_1["file_name"]}',
+        f'{spice_file2} {netlist_1["file_name"]}',
+        f"{netgen_setup_file}",
+        f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.out',
+    ]
 
-    std_out = subprocess.run(netgen_LVS_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    decoded_output = std_out.stdout.decode('utf-8')
-    print(decoded_output, end='')
+    std_out = subprocess.run(
+        netgen_LVS_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
+    )
+    decoded_output = std_out.stdout.decode("utf-8")
+    print(decoded_output, end="")
 
-    write_stdout_file(f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.log', decoded_output)
+    write_stdout_file(
+        f'{output_dir}/{netlist_1["file_name"]}-{netlist_1["file_type"]}-vs-{netlist_2["file_type"]}.log',
+        decoded_output,
+    )
+
 
 def write_stdout_file(output_file, content):
     """open and write stdout to file
@@ -87,6 +107,7 @@ def write_stdout_file(output_file, content):
     std_out_file = open(output_file, "w")
     std_out_file.write(content)
     std_out_file.close()
+
 
 def is_extractable(file_type):
     """checks if the file can be extracted
@@ -107,9 +128,9 @@ def is_extractable(file_type):
         file_ext = None
 
     return file_ext
-    
 
-def set_db(file1_path, file2_path):
+
+def create_db(file1_path, file2_path):
     """sets the tuples for the file inputs
 
     Args:
@@ -123,33 +144,42 @@ def set_db(file1_path, file2_path):
     """
     file1 = os.path.splitext(file1_path)
     file2 = os.path.splitext(file2_path)
-    file1_type = os.path.basename(file1[1]).split('.')[1]
-    file2_type = os.path.basename(file2[1]).split('.')[1]
+    file1_type = os.path.basename(file1[1]).split(".")[1]
+    file2_type = os.path.basename(file2[1]).split(".")[1]
     file1_name = os.path.basename(file1[0])
     file2_name = os.path.basename(file2[0])
-    
+
     file1_db = {
-        "file_path" : file1_path,
-        "file_type" : file1_type,
-        "file_name" : file1_name,
-        "file_extraction" : is_extractable(file1_type)
+        "file_path": file1_path,
+        "file_type": file1_type,
+        "file_name": file1_name,
+        "file_extraction": is_extractable(file1_type),
     }
     file2_db = {
-        "file_path" : file2_path,
-        "file_type" : file2_type,
-        "file_name" : file2_name,
-        "file_extraction" : is_extractable(file2_type)
+        "file_path": file2_path,
+        "file_type": file2_type,
+        "file_name": file2_name,
+        "file_extraction": is_extractable(file2_type),
     }
 
     return file1_db, file2_db
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process LVS check. Layout will always be on the left')
-    parser.add_argument('-i', '--input', help="input files to run LVS on them. Takes two input files", required=True, nargs=2)
-    parser.add_argument('-o', '--output', help="output file", required=True)
+    parser = argparse.ArgumentParser(
+        description="Process LVS check. Layout will always be on the left"
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        help="input files to run LVS on them. Takes two input files",
+        required=True,
+        nargs=2,
+    )
+    parser.add_argument("-o", "--output", help="output file", required=True)
     args = parser.parse_args()
-    PDK_ROOT=os.getenv('PDK_ROOT')
-    PDK=os.getenv('PDK')
+    PDK_ROOT = os.getenv("PDK_ROOT")
+    PDK = os.getenv("PDK")
 
     input1 = os.path.abspath(args.input[0])
     input2 = os.path.abspath(args.input[1])
@@ -161,11 +191,7 @@ if __name__ == "__main__":
         # directory already exists
         pass
 
-    input1_db, input2_db = set_db(input1, input2)
+    input1_db, input2_db = create_db(input1, input2)
     extract(input1_db, output)
     extract(input2_db, output)
     run_lvs(input1_db, input2_db, output)
-
-    
-    
-
