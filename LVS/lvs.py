@@ -204,7 +204,16 @@ def vlog2spice(
     netlist: object,
     output_dir: str
 ):
-    vlog_to_spice = f'{output_dir}/{netlist.name}-folded.spice'
+    """utilize vlog2spice binary from qflow to extract spice from gl netlist
+
+    Args:
+        netlist (object): object discribing the netlist
+        output_dir (str): output directory
+
+    Returns:
+        [str]: path to output from vlog2spice
+    """
+    vlog_to_spice = f'{output_dir}/{netlist.name}.spice'
     vlog2spice_command = [
         f'{os.path.dirname(os.path.abspath(__file__))}/vlog2Spice',
         f'{netlist.file_path}',
@@ -215,30 +224,46 @@ def vlog2spice(
     v2s_command = vlog2spice_command + get_std_spice()
     
     subprocess.run(v2s_command)
-    vlog_to_spice = unfold(vlog_to_spice, output_dir)
+    unfold(vlog_to_spice)
     return vlog_to_spice
 
 def get_std_spice():
+    """Fetches the library spice from the PDK_ROOT
+
+    Returns:
+        Array: Array of paths to library spice netlists
+    """
     lib_include = []
-    for file in glob.glob(f'{PDK_ROOT}/{PDK}/libs.ref/*/spice/*_fd_*.spice'):
-        lib_include.extend(('-l', file))
+    for file in glob.glob(f'{PDK_ROOT}/{PDK}/libs.ref/*'):
+        std_spice_file = f'{file}/spice/{os.path.basename(file)}.spice'
+        if os.path.isfile(std_spice_file):
+            lib_include.extend(('-l', std_spice_file))
     return lib_include
 
 def unfold(
-    spice_netlist: str,
-    output_dir: str
+    spice_netlist: str
 ):
-    print(os.path.splitext(spice_netlist))
-    tmp_spice_netlist = f'{output_dir}/{os.path.dirname(spice_netlist)}'
-    vlog2spice_command = [
-        f'{os.path.dirname(os.path.abspath(__file__))}/unfold',
-        f'{spice_netlist}',
-        '>',
-        f'{tmp_spice_netlist}'
-    ]
-    
-    subprocess.run(vlog2spice_command)
-    return tmp_spice_netlist
+    """unfolds the spice netlist coming from vlog2spice, to abide by netgen guidlines
+
+    Args:
+        spice_netlist (str): path to the spice netlist
+    """
+    updated_data = ''
+
+    with open(spice_netlist, 'r+') as file:
+        file_content = file.readlines()
+        for line in file_content:
+
+            if line.startswith('+'):
+                updated_data = f'{updated_data[:-1]} '
+                updated_line = line[2:]
+                updated_data += f'{updated_line}'
+            else:
+                updated_data += line
+                
+        file.seek(0)
+        file.truncate()
+        file.write(updated_data)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
