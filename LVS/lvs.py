@@ -2,14 +2,11 @@
 
 # This script is a wrapper to run full LVS using gds, mag, maglef, verilog GL netlist, spice, cdl
 
-from multiprocessing.dummy import Array
 import subprocess
 import os
 import argparse
 import warnings
 import glob
-
-from numpy import array
 
 class Design:
     def __init__(self, file_path):
@@ -244,6 +241,7 @@ def unfold(
     spice_netlist: str
 ):
     """unfolds the spice netlist coming from vlog2spice, to abide by netgen guidlines
+        Preserves header comments but removes any comments inside the subckt block
 
     Args:
         spice_netlist (str): path to the spice netlist
@@ -254,10 +252,13 @@ def unfold(
         file_content = file.readlines()
         for line in file_content:
 
+            comment_index = 0
+
             if line.startswith('+'):
-                updated_data = f'{updated_data[:-1]} '
-                updated_line = line[2:]
-                updated_data += f'{updated_line}'
+                if updated_data.find('*') != -1:
+                    comment_index = updated_data.index('*')
+                updated_line = line[1:]
+                updated_data = f'{updated_data[:comment_index - 1]}' + f'{updated_line}'
             else:
                 updated_data += line
                 
@@ -303,14 +304,15 @@ if __name__ == "__main__":
     design1 = Design(input1)
     design2 = Design(input2)
     
-    if design1.extract:
-        extract(design1, output)
-    if design2.extract:
-        extract(design2, output)
+    # if design1.extract:
+    #     extract(design1, output)
+    # if design2.extract:
+    #     extract(design2, output)
 
     if not args.blackbox:
         if design1.file_v2s:
             design1 = Design(vlog2spice(design1, output))
         if design2.file_v2s:
             design2 = Design(vlog2spice(design2, output))
-    run_lvs(design1, design2, output)
+    
+    # run_lvs(design1, design2, output)
