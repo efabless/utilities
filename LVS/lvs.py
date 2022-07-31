@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2022 Efabless Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
 # This script is a wrapper to run full LVS using gds, mag, maglef, verilog GL netlist, spice, cdl
 
@@ -201,16 +215,18 @@ def write_stdout_file(
 def vlog2spice(
     netlist: object,
     output_dir: str,
-    force: bool
+    force: bool,
+    verilog_includes
 ):
     """utilize vlog2spice binary from qflow to extract spice from gl netlist
 
     Args:
         netlist (object): object discribing the netlist
         output_dir (str): output directory
+        force (bool): force flag
 
     Returns:
-        [str]: path to output from vlog2spice
+        str: path to output from vlog2spice
     """
     vlog_to_spice = f'{output_dir}/{netlist.name}.spice'
     vlog2spice_command = [
@@ -220,7 +236,11 @@ def vlog2spice(
         f'{vlog_to_spice}',
         '-i'
     ]
-    v2s_command = vlog2spice_command + get_std_spice()
+    v2s_includes = []
+    if len(verilog_includes) > 0:
+        for v in verilog_includes:
+            v2s_includes.extend(('-l', v.file_path))
+    v2s_command = vlog2spice_command + get_std_spice() + v2s_includes
     
     std_out = subprocess.run(
         v2s_command, capture_output=True
@@ -231,9 +251,9 @@ def vlog2spice(
 
     write_stdout_file(
         f'{output_dir}/{netlist.name}-vlog2spice.log',
-        out,
+        out + err,
     )
-    if len(err) > 0 and not force:
+    if err.find('subcircuit') != -1 and not force:
         sys.exit('ERROR: Please define the above subcircuits for transistor level LVS')
     
     unfold(vlog_to_spice)
@@ -310,6 +330,12 @@ if __name__ == "__main__":
         help="force vlog2spice to run and overcome hierarchy errors",
         action="store_true"
     )
+    parser.add_argument(
+        "-v",
+        "--verilog",
+        help="includes other verilog modules",
+        nargs='+'
+    )
     args = parser.parse_args()
     PDK_ROOT, PDK = check_pdk()
 
@@ -317,6 +343,7 @@ if __name__ == "__main__":
     input2 = os.path.abspath(args.input[1])
     output = os.path.abspath(args.output_dir)
     force = args.force
+    verilog = args.verilog
 
     try:
         os.makedirs(output)
@@ -324,14 +351,21 @@ if __name__ == "__main__":
         # directory already exists
         pass
 
+    
+    verilog_includes = []
+    if verilog:
+        for includes in verilog:
+            v_include = Design(os.path.abspath(includes))
+            verilog_includes.append(Design(vlog2spice(v_include, output, force, "")))
+
     design1 = Design(input1)
     design2 = Design(input2)
     
     if not args.blackbox:
         if design1.file_v2s:
-            design1 = Design(vlog2spice(design1, output, force))
+            design1 = Design(vlog2spice(design1, output, force, verilog_includes))
         if design2.file_v2s:
-            design2 = Design(vlog2spice(design2, output, force))
+            design2 = Design(vlog2spice(design2, output, force, verilog_includes))
 
     if design1.extract:
         extract(design1, output)
