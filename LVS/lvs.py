@@ -7,6 +7,7 @@ import os
 import argparse
 import warnings
 import glob
+import sys
 
 class Design:
     def __init__(self, file_path):
@@ -199,7 +200,8 @@ def write_stdout_file(
 
 def vlog2spice(
     netlist: object,
-    output_dir: str
+    output_dir: str,
+    force: bool
 ):
     """utilize vlog2spice binary from qflow to extract spice from gl netlist
 
@@ -220,7 +222,20 @@ def vlog2spice(
     ]
     v2s_command = vlog2spice_command + get_std_spice()
     
-    subprocess.run(v2s_command)
+    std_out = subprocess.run(
+        v2s_command, capture_output=True
+    )
+    out, err = std_out.stdout.decode("utf-8"), std_out.stderr.decode("utf-8")
+    print(out)
+    print(err)
+
+    write_stdout_file(
+        f'{output_dir}/{netlist.name}-vlog2spice.log',
+        out,
+    )
+    if len(err) > 0 and not force:
+        sys.exit('ERROR: Please define the above subcircuits for transistor level LVS')
+    
     unfold(vlog_to_spice)
     return vlog_to_spice
 
@@ -286,6 +301,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "-bb",
         "--blackbox",
+        help="run LVS in blackbox mode",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        help="force vlog2spice to run and overcome hierarchy errors",
         action="store_true"
     )
     args = parser.parse_args()
@@ -294,6 +316,7 @@ if __name__ == "__main__":
     input1 = os.path.abspath(args.input[0])
     input2 = os.path.abspath(args.input[1])
     output = os.path.abspath(args.output_dir)
+    force = args.force
 
     try:
         os.makedirs(output)
@@ -304,15 +327,15 @@ if __name__ == "__main__":
     design1 = Design(input1)
     design2 = Design(input2)
     
+    if not args.blackbox:
+        if design1.file_v2s:
+            design1 = Design(vlog2spice(design1, output, force))
+        if design2.file_v2s:
+            design2 = Design(vlog2spice(design2, output, force))
+
     if design1.extract:
         extract(design1, output)
     if design2.extract:
         extract(design2, output)
-
-    if not args.blackbox:
-        if design1.file_v2s:
-            design1 = Design(vlog2spice(design1, output))
-        if design2.file_v2s:
-            design2 = Design(vlog2spice(design2, output))
     
     run_lvs(design1, design2, output)
