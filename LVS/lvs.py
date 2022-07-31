@@ -304,10 +304,10 @@ if __name__ == "__main__":
     design1 = Design(input1)
     design2 = Design(input2)
     
-    # if design1.extract:
-    #     extract(design1, output)
-    # if design2.extract:
-    #     extract(design2, output)
+    if design1.extract:
+        extract(design1, output)
+    if design2.extract:
+        extract(design2, output)
 
     if not args.blackbox:
         if design1.file_v2s:
@@ -315,4 +315,4 @@ if __name__ == "__main__":
         if design2.file_v2s:
             design2 = Design(vlog2spice(design2, output))
     
-    # run_lvs(design1, design2, output)
+    run_lvs(design1, design2, output)
