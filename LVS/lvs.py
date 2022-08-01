@@ -128,7 +128,7 @@ def extract(
         "-noconsole",
         "-rcfile",
         f"{PDK_ROOT}/{PDK}/libs.tech/magic/{PDK}.magicrc",
-        f"extract_{design.view}.tcl",
+        f"{os.path.dirname(os.path.abspath(__file__))}/extract_{design.view}.tcl",
     ]
 
     if design.extract is True:
