@@ -132,15 +132,19 @@ def extract(
     ]
 
     if design.extract is True:
-        std_out = subprocess.run(
-            magic_ext_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
-        )
-        decoded_output = std_out.stdout.decode("utf-8")
-        print(decoded_output, end="")
-        write_stdout_file(
-            f'{output_dir}/{design.name}-magic_extraction.log',
-            decoded_output,
-        )
+        with open(f'{output_dir}/{design.name}-magic_extraction.log', "wb") as f:
+            std_out = subprocess.Popen(
+                magic_ext_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
+            )
+            with open(f'{output_dir}/{design.name}-magic_extraction.log', "w") as f:
+                while True:
+                    output = std_out.stdout.readline()
+                    if std_out.poll() is not None:
+                        break
+                    if output:
+                        out = output.decode("utf-8")
+                        print(out)
+                        f.write(out)
 
     elif design.extract is None:
         raise TypeError(f"LVS on {design.view} files not supported")
@@ -187,16 +191,18 @@ def run_lvs(
         f'{output_dir}/{netlist_1.name}-{netlist_1.view}-vs-{netlist_2.view}.out',
     ]
 
-    std_out = subprocess.run(
+    std_out = subprocess.Popen(
         netgen_LVS_command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
     )
-    decoded_output = std_out.stdout.decode("utf-8")
-    print(decoded_output, end="")
-
-    write_stdout_file(
-        f'{output_dir}/{netlist_1.name}-{netlist_1.view}-vs-{netlist_2.view}.log',
-        decoded_output,
-    )
+    with open(f'{output_dir}/{netlist_1.name}-{netlist_1.view}-vs-{netlist_2.view}.log', "w") as f:
+                while True:
+                    output = std_out.stdout.readline()
+                    if std_out.poll() is not None:
+                        break
+                    if output:
+                        out = output.decode("utf-8")
+                        print(out)
+                        f.write(out)
 
 def write_stdout_file(
     output_file: str,
@@ -208,7 +214,7 @@ def write_stdout_file(
         output_file (str): path to output file
         content (str): content of file
     """
-    std_out_file = open(output_file, "w")
+    std_out_file = open(output_file, "a")
     std_out_file.write(content)
     std_out_file.close()
 
@@ -246,8 +252,9 @@ def vlog2spice(
         v2s_command, capture_output=True
     )
     out, err = std_out.stdout.decode("utf-8"), std_out.stderr.decode("utf-8")
-    print(out)
-    print(err)
+    
+    if out or err:
+        print(out + err)
 
     write_stdout_file(
         f'{output_dir}/{netlist.name}-vlog2spice.log',
