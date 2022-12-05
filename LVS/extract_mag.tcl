@@ -3,7 +3,7 @@ file mkdir $extdir
 cd $extdir
 crashbackups stop
 drc off
-load [file rootname [file tail $::env(ext_inp1)]]
+load $::env(ext_inp1)
 cellname list filepath [file rootname [file tail $::env(ext_inp1)]] [file dirname $::env(ext_inp1)]
 flush [file rootname [file tail $::env(ext_inp1)]]
 select top cell
