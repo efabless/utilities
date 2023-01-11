@@ -186,15 +186,18 @@ def run_lvs(
     pdk_spice = get_std_spice()
     count = 0
     for sp in pdk_spice:
-        if count == 0:
-            netgen_setup_file.write(f"set circuit2 [readnet spice {sp}]\n")
-            count = 1
-        else:
-            netgen_setup_file.write(f"readnet spice {sp} $circuit2\n")
-    for s in spice:
-        netgen_setup_file.write(f"readnet spice {s} $circuit2\n")
-    for v in verilog_includes:
-        netgen_setup_file.write(f"readnet verilog {v} $circuit2\n")
+        if "sky130_fd_pr" not in sp:
+            if count == 0:
+                netgen_setup_file.write(f"set circuit2 [readnet spice {sp}]\n")
+                count = 1
+            else:
+                netgen_setup_file.write(f"readnet spice {sp} $circuit2\n")
+    if spice:
+        for s in spice:
+            netgen_setup_file.write(f"readnet spice {s} $circuit2\n")
+    if verilog_includes:
+        for v in verilog_includes:
+            netgen_setup_file.write(f"readnet verilog {v} $circuit2\n")
     
     if netlist_2.extract is True:
         print("circuit 2 has to be verilog")
@@ -203,8 +206,19 @@ def run_lvs(
         spice_file2 = netlist_2.file_path
         netgen_setup_file.write(f"readnet verilog {spice_file2} $circuit2\n")
 
-    for a in abstract:
-        netgen_setup_file.write(f"flatten class \"$circuit2 {a}\"\n")
+    netgen_setup_file.write("set cells1 [cells list -all $circuit1]\n")
+    netgen_setup_file.write("set cells2 [cells list -all $circuit2]\n")
+    netgen_setup_file.write("foreach cell \$cells1 {\n")
+    netgen_setup_file.write("    if {[regexp \".._(.+)\" $cell match cellname]} {\n")
+    netgen_setup_file.write("        if {([lsearch $cells2 $cell] < 0) && ([lsearch $cells2 $cellname] >= 0) && ([lsearch $cells1 $cellname] < 0)} {\n")
+    netgen_setup_file.write("            equate classes \"$circuit1 $cell\" \"$circuit2 $cellname\"\n")
+    netgen_setup_file.write("            equate pins \"$circuit1 $cell\" \"$circuit2 $cellname\"\n        }\n    }\n")
+    netgen_setup_file.write("    if {[regexp {.._sky130_fd_sc_[^_]+__fill_[[:digit:]]+} \$cell match]} {\n")
+    netgen_setup_file.write("	ignore class \"$circuit1 $cell\"\n    }\n}\n")
+
+    if abstract:
+        for a in abstract:
+            netgen_setup_file.write(f"flatten class \"$circuit2 {a}\"\n")
 
     netgen_setup_file.write(f"lvs \"$circuit1 {netlist_1.name}\" \"$circuit2 {netlist_1.name}\" {PDK_ROOT}/{PDK}/libs.tech/netgen/{PDK}_setup.tcl {output_dir}/{netlist_1.name}-{netlist_1.view}-vs-{netlist_2.view}.out -json\n")
 
@@ -419,11 +433,11 @@ if __name__ == "__main__":
     #     if design2.file_v2s:
     #         design2 = Design(vlog2spice(design2, output, force, verilog_includes, spice))
 
-    if design1.extract:
-        extract(design1, output)
-    elif design2.extract:
-        print("spice or gds should be circuit 1")
-        sys.exit()
+    # if design1.extract:
+    #     extract(design1, output)
+    # elif design2.extract:
+    #     print("spice or gds should be circuit 1")
+    #     sys.exit()
     
     run_lvs(design1, design2, output, spice, verilog, abstract)
     os.remove(f"{os.path.dirname(os.path.abspath(__file__))}/netgen_setup_file.tcl")

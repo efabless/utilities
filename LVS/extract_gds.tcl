@@ -15,5 +15,5 @@ extract unique
 extract all
 extract
 ext2spice lvs
-ext2spice -o $::env(ext_out)/[file rootname [file tail $::env(ext_inp1)]]-gds-extracted.spice
+ext2spice -o $::env(ext_out)/[file rootname [file tail $::env(ext_inp1)]]-gds-extracted.spice [file rootname [file tail $::env(ext_inp1)]].ext
 exit
