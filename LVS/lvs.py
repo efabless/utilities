@@ -22,6 +22,10 @@ import argparse
 import warnings
 import glob
 import sys
+from verilog_parser import VerilogParser
+from typing import List
+
+from colorama import Fore, Back, Style
 
 class Design:
     def __init__(self, file_path):
@@ -90,17 +94,21 @@ def check_pdk():
     History:
         created 07/24/2022
     """
-    pdk_root = os.getenv("PDK_ROOT")
-    pdk = os.getenv("PDK")
-    if pdk_root is None and os.path.isdir(pdk_root):
-        raise FileNotFoundError(
-            "PDK_ROOT doesn't exist, please export PDK_ROOT to the right pdk path"
-        )
-
-    if pdk is None and os.path.join(pdk_root, pdk):
-        warnings.warn("PDK is not exported, will default to sky130B")
-        pdk = "sky130B"
-
+    if "PDK_ROOT" in os.environ:
+        pdk_root = os.getenv("PDK_ROOT")
+        if not os.path.isdir(pdk_root):
+            raise FileNotFoundError(
+                Fore.RED + f"path {pdk_root} doesn't exist, export PDK_ROOT to the right pdk path"
+            )
+    else:
+        sys.exit(Fore.RED + "PDK_ROOT is not exported, export PDK_ROOT to the right pdk path")
+    if "PDK" in os.environ:
+        pdk = os.getenv("PDK")
+        if not os.path.isdir(os.path.join(pdk_root, pdk)):
+            sys.exit(Fore.RED + f"technology {pdk} can't be found, export PDK to the correct technology")
+    else:
+        sys.exit(Fore.RED + "PDK is not defined, export PDK to the correct technology")
+        
     return pdk_root, pdk
 
 def extract(
@@ -155,7 +163,9 @@ def run_lvs(
     output_dir: str,
     spice, 
     verilog_includes,
-    abstract
+    abstract,
+    verilog_directory,
+    pdk_path
 ):
     """run generic LVS
 
@@ -170,7 +180,6 @@ def run_lvs(
     """
     setup_file = f"{os.path.dirname(os.path.abspath(__file__))}/netgen_setup_file.tcl"
     netgen_setup_file = open(setup_file, "w")
-    print(verilog_includes)
 
     if netlist_1.view == "gds" or netlist_2.view == "gds":
         os.environ["MAGIC_EXT_USE_GDS"] = "1"
@@ -184,6 +193,18 @@ def run_lvs(
         sys.exit()
 
     pdk_spice = get_std_spice()
+    lef_paths = get_pdk_lefs_paths(pdk_path)
+    pdk_macros = []
+    non_pdk_macros = []
+    for lef in lef_paths:
+        pdk_macros = pdk_macros + get_macros(lef)
+
+    parsed = VerilogParser(netlist_2.file_path)
+    for instance in parsed.instances:
+        macro = parsed.instances[instance]
+        if macro not in pdk_macros:
+            non_pdk_macros.append(macro)
+    non_pdk_macros = list(set(non_pdk_macros))
     count = 0
     for sp in pdk_spice:
         if "sky130_fd_pr" not in sp:
@@ -195,9 +216,19 @@ def run_lvs(
     if spice:
         for s in spice:
             netgen_setup_file.write(f"readnet spice {s} $circuit2\n")
+            non_pdk_macros.remove(os.path.splitext(os.path.basename(s))[0])
     if verilog_includes:
         for v in verilog_includes:
             netgen_setup_file.write(f"readnet verilog {v} $circuit2\n")
+            non_pdk_macros.remove(os.path.splitext(os.path.basename(v))[0])
+    
+    if verilog_directory:
+        for macro in non_pdk_macros:
+            verilog_file = os.path.join(verilog_directory, f"{macro}.v")
+            if os.path.isfile(verilog_file):
+                netgen_setup_file.write(f"readnet verilog {verilog_file} $circuit2\n")
+            else:
+                sys.exit(Fore.RED + f'{verilog_file} couldn\'t be found, please check if file exisits')
     
     if netlist_2.extract is True:
         print("circuit 2 has to be verilog")
@@ -257,57 +288,25 @@ def write_stdout_file(
     std_out_file.write(content)
     std_out_file.close()
 
-def vlog2spice(
-    netlist: object,
-    output_dir: str,
-    force: bool,
-    verilog_includes,
-    spice
-):
-    """utilize vlog2spice binary from qflow to extract spice from gl netlist
 
-    Args:
-        netlist (object): object discribing the netlist
-        output_dir (str): output directory
-        force (bool): force flag
+def get_macros(lef_file: str) -> List[str]:
+    macros = []
+    with open(lef_file) as f:
+        for line in f.readlines():
+            if "MACRO" in line:
+                macro_name = line.split()[1]
+                macros.append(macro_name)
+    return macros
 
-    Returns:
-        str: path to output from vlog2spice
-    """
-    vlog_to_spice = f'{output_dir}/{netlist.name}.spice'
-    vlog2spice_command = [
-        f'{os.path.dirname(os.path.abspath(__file__))}/vlog2Spice',
-        f'{netlist.file_path}',
-        '-o',
-        f'{vlog_to_spice}',
-        '-i',
-    ]
-    v2s_includes = []
-    if len(verilog_includes) > 0:
-        for v in verilog_includes:
-            v2s_includes.extend(('-l', v.file_path))
-    if len(spice) > 0:
-        for s in spice:
-            v2s_includes.extend(('-l', s.file_path))
-    v2s_command = vlog2spice_command + get_std_spice() + v2s_includes
-    
-    std_out = subprocess.run(
-        v2s_command, capture_output=True
-    )
-    out, err = std_out.stdout.decode("utf-8"), std_out.stderr.decode("utf-8")
-    
-    if out or err:
-        print(out + err)
+def get_pdk_lefs_paths(pdk_path: str) -> List[str]:
+    lef_paths = []
+    for root, dirs, files in os.walk(pdk_path):
+        for file in files:
+            filename, file_extension = os.path.splitext(f"{file}")
+            if file_extension == ".lef":
+                lef_paths.append(f"{root}/{file}")
+    return lef_paths
 
-    write_stdout_file(
-        f'{output_dir}/{netlist.name}-vlog2spice.log',
-        out + err,
-    )
-    if err.find('subcircuit') != -1 and not force:
-        sys.exit('ERROR: Please define the above subcircuits for transistor level LVS')
-    
-    unfold(vlog_to_spice)
-    return vlog_to_spice
 
 def get_std_spice():
     """Fetches the library spice from the PDK_ROOT
@@ -320,35 +319,6 @@ def get_std_spice():
         if os.path.isfile(file):
             lib_include.append(file)
     return lib_include
-
-def unfold(
-    spice_netlist: str
-):
-    """unfolds the spice netlist coming from vlog2spice, to abide by netgen guidlines
-        Preserves header comments but removes any comments inside the subckt block
-
-    Args:
-        spice_netlist (str): path to the spice netlist
-    """
-    updated_data = ''
-
-    with open(spice_netlist, 'r+') as file:
-        file_content = file.readlines()
-        for line in file_content:
-
-            comment_index = 0
-
-            if line.startswith('+'):
-                if updated_data.find('*') != -1:
-                    comment_index = updated_data.index('*')
-                updated_line = line[1:]
-                updated_data = f'{updated_data[:comment_index - 1]}' + f'{updated_line}'
-            else:
-                updated_data += line
-                
-        file.seek(0)
-        file.truncate()
-        file.write(updated_data)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -386,6 +356,11 @@ if __name__ == "__main__":
         nargs='+'
     )
     parser.add_argument(
+        "-vd",
+        "--verilog_directory",
+        help="verilog directory which has all the gl verilogs"
+    )
+    parser.add_argument(
         "-s",
         "--spice",
         help="abstract cells",
@@ -405,6 +380,7 @@ if __name__ == "__main__":
     output = os.path.abspath(args.output_dir)
     force = args.force
     verilog = args.verilog
+    verilog_directory = args.verilog_directory
     spice = args.spice
     abstract = args.abstract
 
@@ -433,11 +409,12 @@ if __name__ == "__main__":
     #     if design2.file_v2s:
     #         design2 = Design(vlog2spice(design2, output, force, verilog_includes, spice))
 
-    # if design1.extract:
-    #     extract(design1, output)
-    # elif design2.extract:
-    #     print("spice or gds should be circuit 1")
-    #     sys.exit()
+    if design1.extract:
+        extract(design1, output)
+    elif design2.extract:
+        print("spice or gds should be circuit 1")
+        sys.exit()
     
-    run_lvs(design1, design2, output, spice, verilog, abstract)
+    
+    run_lvs(design1, design2, output, spice, verilog, abstract, verilog_directory, os.path.join(PDK_ROOT, PDK))
     os.remove(f"{os.path.dirname(os.path.abspath(__file__))}/netgen_setup_file.tcl")
