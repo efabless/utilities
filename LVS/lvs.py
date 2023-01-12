@@ -270,6 +270,7 @@ def create_netgen_setup_file(
     non_pdk_macros,
     blackbox,
     setup_file,
+    pdk,
 ):
 
     netgen_setup_file = open(setup_file, "w")
@@ -347,6 +348,21 @@ def create_netgen_setup_file(
         "    if {[regexp {.._sky130_fd_sc_[^_]+__fill_[[:digit:]]+} \$cell match]} {\n"
     )
     netgen_setup_file.write('	ignore class "$circuit1 $cell"\n    }\n}\n')
+    if "sky130" in pdk:
+        netgen_setup_file.write("foreach cell \$cells1 {\n")
+        netgen_setup_file.write('    if {[regexp {([A-Z][A-Z0-9]_)*sky130_sram_([^_]+)_([^_]+)_([^_]+)_([^_]+)_(.+)} $cell match prefix memory_size memory_type matrix io cellname]} {\n')
+        netgen_setup_file.write('	    if {([lsearch $cells2 $cell] < 0) && \\\n')
+        netgen_setup_file.write('   		([lsearch $cells2 $cellname] >= 0) && \\\n')
+        netgen_setup_file.write('   		([lsearch $cells1 $cellname] < 0)} { \n')
+        netgen_setup_file.write('	    equate classes \"-circuit2 $cellname\" \"-circuit1 $cell\"\n	}\n    }\n}\n')
+
+        netgen_setup_file.write("foreach cell \$cells1 {\n")
+        netgen_setup_file.write('    if {[regexp {([A-Z][A-Z0-9]_)*(.*)} $cell match prefix cellname]} {\n')
+        netgen_setup_file.write('	    if {([lsearch $cells2 $cell] < 0) && \\\n')
+        netgen_setup_file.write('   		([lsearch $cells2 $cellname] >= 0)} {\n')
+        netgen_setup_file.write('   		equate classes "-circuit2 $cellname" "-circuit1 $cell"\n')
+        netgen_setup_file.write('   		if  { [lsearch $cells1 $cellname] > 0 } {"\n')
+        netgen_setup_file.write('   		    equate classes \"-circuit2 $cellname\" \"-circuit1 $cellname\"\n   		}\n	    }\n    }\n}\n')
 
     if abstract:
         for a in abstract:
@@ -429,6 +445,7 @@ if __name__ == "__main__":
         non_pdk_macros,
         args.blackbox,
         setup_file,
+        PDK,
     )
 
     if design1.extract:
