@@ -166,3 +166,17 @@ def mag_to_def(
         "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/mag_to_def.tcl"
     ]
     subprocess.run(magic_cmd, env=magic_env)
+
+def drc(console, gds_file, output_path):
+    gds_file = os.path.abspath(gds_file)
+    output_path = os.path.abspath(output_path)
+    precheck_root = os.path.join(os.path.expanduser("~"), "mpw_precheck")
+    if not os.path.exists(precheck_root):
+        subprocess.run(['git', 'clone', 'https://github.com/efabless/mpw_precheck.git', precheck_root])
+    if not os.path.exists(f'{output_path}/logs'):
+        os.mkdir(f'{output_path}/logs')
+    if not os.path.exists(f'{output_path}/outputs'):
+        os.mkdir(f'{output_path}/outputs')
+    if not os.path.exists(f'{output_path}/outputs/reports'):
+        os.mkdir(f'{output_path}/outputs/reports')
+    subprocess.run(['python3', f'{precheck_root}/checks/drc_checks/klayout/klayout_gds_drc_check.py', '-g', f'{gds_file}', '-o', f'{output_path}', '-f', '-b', '-og'])

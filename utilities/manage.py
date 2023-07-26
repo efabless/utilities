@@ -18,6 +18,7 @@ import click
 from rich.console import Console
 
 from .common import (
+    drc,
     gds_to_def,
     gds_to_mag,
     mag_to_def,
@@ -80,4 +81,13 @@ def gds_to_def_cmd(gds_file, output, pdk_root, pdk):
     console = Console()
     gds_to_def(
         console, gds_file, output, pdk_root, pdk
+    )
+
+@click.command("drc", help="runs klayout DRC")
+@click.argument("gds_file")
+@click.option("--output", required=True, help="path to destination output reports")
+def drc_cmd(gds_file, output):
+    console = Console()
+    drc(
+        console, gds_file, output
     )
