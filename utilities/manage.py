@@ -21,6 +21,7 @@ from .common import (
     drc,
     gds_to_def,
     gds_to_mag,
+    lvs,
     mag_to_def,
     mag_to_gds,
 )
@@ -91,3 +92,14 @@ def drc_cmd(gds_file, output):
     drc(
         console, gds_file, output
     )
+
+@click.command("lvs", help="runs LVS")
+@click.argument("design_name")
+@click.option("--output", required=True, help="path to destination output reports")
+@click.option("--design_dir", required=True, help="path to design directory (should have gds/<design>.gds & verilog/gl/<design>.v)")
+@click.option("--config_file", required=True, help="path to LVS config file")
+@click.option("--pdk_root", required=True, help="path to PDK")
+@click.option("--pdk", required=True, help="PDK family (sky130A, sky130B, etc..)")
+def lvs_cmd(design_name, output, design_dir, config_file, pdk_root, pdk):
+    console = Console()
+    lvs(console, design_dir, output, design_name, config_file, pdk_root, pdk)

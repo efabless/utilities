@@ -180,3 +180,15 @@ def drc(console, gds_file, output_path):
     if not os.path.exists(f'{output_path}/outputs/reports'):
         os.mkdir(f'{output_path}/outputs/reports')
     subprocess.run(['python3', f'{precheck_root}/checks/drc_checks/klayout/klayout_gds_drc_check.py', '-g', f'{gds_file}', '-o', f'{output_path}', '-f', '-b', '-og'])
+
+def lvs(console, design_dir, output_path, design_name, config_file, pdk_root, pdk):
+    design_dir = os.path.abspath(design_dir)
+    output_path = os.path.abspath(output_path)
+    config_file = os.path.abspath(config_file)
+    precheck_root = os.path.join(os.path.expanduser("~"), "mpw_precheck")
+    os.environ['PYTHONPATH'] = f'{precheck_root}'
+    if not os.path.exists(precheck_root):
+        subprocess.run(['git', 'clone', 'https://github.com/efabless/mpw_precheck.git', precheck_root])
+    if not os.path.exists(f'{output_path}/{design_name}'):
+        os.mkdir(f'{output_path}/{design_name}')
+    subprocess.run(['python3', f'{precheck_root}/checks/lvs_check/lvs.py', '-g', f'{design_dir}', '-o', f'{output_path}', '-d', f'{design_name}', '-c', f'{config_file}', '-p', f'{pdk_root}/{pdk}'], cwd=precheck_root)
