@@ -24,6 +24,7 @@ from .common import (
     lvs,
     mag_to_def,
     mag_to_gds,
+    xor,
 )
 
 @click.command("mag-to-gds", help="creates a gds from mag")
@@ -44,7 +45,7 @@ def mag_to_gds_cmd(mag_file, maglef_macro, mag_dir, gds_macro, output, pdk_root,
         console, mag_file, maglef_macro, mag_dir, gds_macro, output, pdk_root, pdk
     )
 
-@click.command("gds-to-mag", help="creates a gds from mag")
+@click.command("gds-to-mag", help="creates a mag from gds")
 @click.argument("gds_file")
 @click.option("--pdk_root", required=True, help="path to pdk")
 @click.option("--pdk", required=True, help="pdk family")
@@ -55,7 +56,7 @@ def gds_to_mag_cmd(gds_file, output, pdk_root, pdk):
         console, gds_file, output, pdk_root, pdk
     )
 
-@click.command("mag-to-def", help="creates a gds from mag")
+@click.command("mag-to-def", help="creates a def from mag")
 @click.argument("mag_file")
 @click.option("--pdk_root", required=True, help="path to pdk")
 @click.option("--pdk", required=True, help="pdk family")
@@ -73,7 +74,7 @@ def mag_to_def_cmd(mag_file, maglef_macro, mag_dir, gds_macro, output, pdk_root,
         console, mag_file, maglef_macro, mag_dir, gds_macro, output, pdk_root, pdk
     )
 
-@click.command("gds-to-def", help="creates a gds from mag")
+@click.command("gds-to-def", help="creates a def from gds")
 @click.argument("gds_file")
 @click.option("--pdk_root", required=True, help="path to pdk")
 @click.option("--pdk", required=True, help="pdk family")
@@ -103,3 +104,11 @@ def drc_cmd(gds_file, output):
 def lvs_cmd(design_name, output, design_dir, config_file, pdk_root, pdk):
     console = Console()
     lvs(console, design_dir, output, design_name, config_file, pdk_root, pdk)
+
+@click.command("xor", help="runs xor on 2 layouts")
+@click.argument("design_name")
+@click.option("--design1", required=True, help="path to gds1")
+@click.option("--design2", required=True, help="path to gds2")
+def xor_cmd(design_name, design1, design2):
+    console = Console()
+    xor(console, design_name, design1, design2)

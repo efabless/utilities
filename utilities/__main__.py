@@ -23,6 +23,7 @@ from .manage import (
     mag_to_def_cmd,
     drc_cmd,
     lvs_cmd,
+    xor_cmd,
 )
 
 
@@ -42,6 +43,7 @@ cli.add_command(gds_to_def_cmd)
 cli.add_command(mag_to_def_cmd)
 cli.add_command(drc_cmd)
 cli.add_command(lvs_cmd)
+cli.add_command(xor_cmd)
 
 if __name__ == "__main__":
     cli()

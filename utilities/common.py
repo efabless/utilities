@@ -192,3 +192,9 @@ def lvs(console, design_dir, output_path, design_name, config_file, pdk_root, pd
     if not os.path.exists(f'{output_path}/{design_name}'):
         os.mkdir(f'{output_path}/{design_name}')
     subprocess.run(['python3', f'{precheck_root}/checks/lvs_check/lvs.py', '-g', f'{design_dir}', '-o', f'{output_path}', '-d', f'{design_name}', '-c', f'{config_file}', '-p', f'{pdk_root}/{pdk}'], cwd=precheck_root)
+
+def xor(console, design_name, design1, design2):
+    design1 = os.path.abspath(design1)
+    design2 = os.path.abspath(design2)
+    precheck_root = os.path.join(os.path.expanduser("~"), "mpw_precheck")
+    subprocess.run(['klayout', '-r', 'xor.rb.drc', '-rd', f'thr={os.cpu_count}', '-rd', f'top_cell={design_name}', '-rd', f'a={design1}', '-rd', f'b={design2}', '-rd', f'ol={os.path.dirname(design1)}/{design_name}-xor.gds', '-rd', 'ext=gds', '-rd', f'xor_total_file_path={os.path.dirname(design1)}/xor_output.txt', '-zz'], cwd=f'{precheck_root}/checks/xor_check')
