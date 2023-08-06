@@ -16,7 +16,7 @@ This is library of different layout utilities
 - **mag-to-lef:**  creates a lef from mag
 - **xor:**         runs xor on 2 layouts
 
-To start run the utility:
+## Installation
 
 ```
 git clone git@github.com:efabless/utilities.git
