@@ -1,6 +1,7 @@
 drc off
 crashbackups stop
 lef read $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef
+lef read $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sky130_fd_sc_hvl/techlef/sky130_fd_sc_hvl__nom.tlef
 if {  [info exist ::env(EXTRA_LEFS)] } {
     foreach lef_file $::env(EXTRA_LEFS) {
         lef read $lef_file
