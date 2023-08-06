@@ -300,3 +300,96 @@ def def_to_mag(console, def_file, pdk, pdk_root, output):
         "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/def_to_all.tcl"
     ]
     subprocess.run(magic_cmd, env=magic_env)
+
+def mag_to_lef(console, mag_file, pdk, pdk_root, output):
+    magic_env = dict()
+    magic_env['MAG_TO_LEF'] = "1"
+    magic_env['GDS_TO_LEF'] = "0"
+    magic_env['DEF_TO_LEF'] = "0"
+    if not os.path.exists(output):
+        console.print(f"[red]ERROR : {output} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['OUTPUT'] = output
+    if not os.path.exists(pdk_root):
+        console.print(f"[red]ERROR : {pdk_root} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK_ROOT'] = pdk_root
+    if not os.path.exists(os.path.join(pdk_root, pdk)):
+        console.print(f"[red]ERROR : {pdk_root}/{pdk} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK'] = pdk
+    if not os.path.exists(mag_file):
+        console.print(f"[red]ERROR : {mag_file} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['MACRO'] = mag_file
+    magic_env.update(os.environ)
+    magic_cmd = [
+        "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/all_to_lef.tcl"
+    ]
+    subprocess.run(magic_cmd, env=magic_env)
+
+def gds_to_lef(console, gds_file, pdk, pdk_root, output):
+    magic_env = dict()
+    magic_env['MAG_TO_LEF'] = "0"
+    magic_env['GDS_TO_LEF'] = "1"
+    magic_env['DEF_TO_LEF'] = "0"
+    if not os.path.exists(output):
+        console.print(f"[red]ERROR : {output} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['OUTPUT'] = output
+    if not os.path.exists(pdk_root):
+        console.print(f"[red]ERROR : {pdk_root} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK_ROOT'] = pdk_root
+    if not os.path.exists(os.path.join(pdk_root, pdk)):
+        console.print(f"[red]ERROR : {pdk_root}/{pdk} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK'] = pdk
+    if not os.path.exists(gds_file):
+        console.print(f"[red]ERROR : {gds_file} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['MACRO'] = gds_file
+    magic_env.update(os.environ)
+    magic_cmd = [
+        "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/all_to_lef.tcl"
+    ]
+    subprocess.run(magic_cmd, env=magic_env)
+
+def def_to_lef(console, def_file, pdk, pdk_root, output):
+    magic_env = dict()
+    magic_env['MAG_TO_LEF'] = "0"
+    magic_env['GDS_TO_LEF'] = "0"
+    magic_env['DEF_TO_LEF'] = "1"
+    if not os.path.exists(output):
+        console.print(f"[red]ERROR : {output} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['OUTPUT'] = output
+    if not os.path.exists(pdk_root):
+        console.print(f"[red]ERROR : {pdk_root} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK_ROOT'] = pdk_root
+    if not os.path.exists(os.path.join(pdk_root, pdk)):
+        console.print(f"[red]ERROR : {pdk_root}/{pdk} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['PDK'] = pdk
+    if not os.path.exists(def_file):
+        console.print(f"[red]ERROR : {def_file} path doesn't exist")
+        exit(1)
+    else:
+        magic_env['MACRO'] = def_file
+    magic_env.update(os.environ)
+    magic_cmd = [
+        "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/all_to_lef.tcl"
+    ]
+    subprocess.run(magic_cmd, env=magic_env)

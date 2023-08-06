@@ -19,13 +19,16 @@ from rich.console import Console
 
 from .common import (
     def_to_gds,
+    def_to_lef,
     def_to_mag,
     drc,
     gds_to_def,
+    gds_to_lef,
     gds_to_mag,
     lvs,
     mag_to_def,
     mag_to_gds,
+    mag_to_lef,
     xor,
 )
 
@@ -136,3 +139,30 @@ def def_to_gds_cmd(def_file, pdk, pdk_root, output, extra_gds, extra_lef):
 def def_to_mag_cmd(def_file, pdk, pdk_root, output):
     console = Console()
     def_to_mag(console, def_file, pdk, pdk_root, output)
+
+@click.command("mag-to-lef", help="creates a lef from mag")
+@click.argument("mag-file")
+@click.option("--pdk-root", required=True, help="path to pdk")
+@click.option("--pdk", required=True, help="pdk family")
+@click.option("--output", required=True, help="path to destination of gds")
+def mag_to_lef_cmd(mag_file, pdk, pdk_root, output):
+    console = Console()
+    mag_to_lef(console, mag_file, pdk, pdk_root, output)
+
+@click.command("gds-to-lef", help="creates a lef from gds")
+@click.argument("gds-file")
+@click.option("--pdk-root", required=True, help="path to pdk")
+@click.option("--pdk", required=True, help="pdk family")
+@click.option("--output", required=True, help="path to destination of gds")
+def gds_to_lef_cmd(gds_file, pdk, pdk_root, output):
+    console = Console()
+    gds_to_lef(console, gds_file, pdk, pdk_root, output)
+
+@click.command("def-to-lef", help="creates a lef from def")
+@click.argument("def-file")
+@click.option("--pdk-root", required=True, help="path to pdk")
+@click.option("--pdk", required=True, help="pdk family")
+@click.option("--output", required=True, help="path to destination of gds")
+def def_to_lef_cmd(def_file, pdk, pdk_root, output):
+    console = Console()
+    def_to_lef(console, def_file, pdk, pdk_root, output)
