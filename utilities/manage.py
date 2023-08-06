@@ -18,6 +18,8 @@ import click
 from rich.console import Console
 
 from .common import (
+    def_to_gds,
+    def_to_mag,
     drc,
     gds_to_def,
     gds_to_mag,
@@ -112,3 +114,25 @@ def lvs_cmd(design_name, output, design_dir, config_file, pdk_root, pdk):
 def xor_cmd(design_name, design1, design2):
     console = Console()
     xor(console, design_name, design1, design2)
+
+@click.command("def-to-gds", help="creates a gds from def")
+@click.argument("def-file")
+@click.option("--pdk-root", required=True, help="path to pdk")
+@click.option("--pdk", required=True, help="pdk family")
+@click.option("--extra-lef", required=False, help="path to extra lef", multiple=True)
+@click.option(
+    "--extra-gds", required=False, help="path of extra gds", multiple=True
+)
+@click.option("--output", required=True, help="path to destination of gds")
+def def_to_gds_cmd(def_file, pdk, pdk_root, output, extra_gds, extra_lef):
+    console = Console()
+    def_to_gds(console, def_file, pdk, pdk_root, output, extra_gds, extra_lef)
+
+@click.command("def-to-mag", help="creates a mag from def")
+@click.argument("def-file")
+@click.option("--pdk-root", required=True, help="path to pdk")
+@click.option("--pdk", required=True, help="pdk family")
+@click.option("--output", required=True, help="path to destination of gds")
+def def_to_mag_cmd(def_file, pdk, pdk_root, output):
+    console = Console()
+    def_to_mag(console, def_file, pdk, pdk_root, output)
