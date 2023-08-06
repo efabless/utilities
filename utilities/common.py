@@ -225,6 +225,7 @@ def def_to_gds(console, def_file, pdk, pdk_root, output, extra_gds=None, extra_l
     magic_env = dict()
     magic_env['DEF_TO_GDS'] = "1"
     magic_env['DEF_TO_MAG'] = "0"
+    magic_env['MAGIC_GDS_ALLOW_ABSTRACT'] = "1"
     if not os.path.exists(output):
         console.print(f"[red]ERROR : {output} path doesn't exist")
         exit(1)
