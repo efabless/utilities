@@ -219,6 +219,8 @@ def xor(console, design_name, design1, design2):
     design1 = os.path.abspath(design1)
     design2 = os.path.abspath(design2)
     precheck_root = os.path.join(os.path.expanduser("~"), "mpw_precheck")
+    if not os.path.exists(precheck_root):
+        subprocess.run(['git', 'clone', 'https://github.com/efabless/mpw_precheck.git', precheck_root])
     subprocess.run(['klayout', '-r', 'xor.rb.drc', '-rd', f'thr={os.cpu_count}', '-rd', f'top_cell={design_name}', '-rd', f'a={design1}', '-rd', f'b={design2}', '-rd', f'ol={os.path.dirname(design1)}/{design_name}-xor.gds', '-rd', 'ext=gds', '-rd', f'xor_total_file_path={os.path.dirname(design1)}/xor_output.txt', '-zz'], cwd=f'{precheck_root}/checks/xor_check')
 
 def def_to_gds(console, def_file, pdk, pdk_root, output, extra_gds=None, extra_lef=None):
