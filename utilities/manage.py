@@ -106,9 +106,10 @@ def drc_cmd(gds_file, output):
 @click.option("--config_file", required=True, help="path to LVS config file")
 @click.option("--pdk_root", required=True, help="path to PDK")
 @click.option("--pdk", required=True, help="PDK family (sky130A, sky130B, etc..)")
-def lvs_cmd(design_name, output, design_dir, config_file, pdk_root, pdk):
+@click.option("--tag", required=False, help="Run tag, if used then it will not extract")
+def lvs_cmd(design_name, output, design_dir, config_file, pdk_root, pdk, tag):
     console = Console()
-    lvs(console, design_dir, output, design_name, config_file, pdk_root, pdk)
+    lvs(console, design_dir, output, design_name, config_file, pdk_root, pdk, tag)
 
 @click.command("xor", help="runs xor on 2 layouts")
 @click.argument("design_name")
