@@ -213,7 +213,10 @@ def lvs(console, design_dir, output_path, design_name, config_file, pdk_root, pd
         subprocess.run(['git', 'clone', 'https://github.com/efabless/mpw_precheck.git', precheck_root])
     if not os.path.exists(f'{output_path}/{design_name}'):
         os.mkdir(f'{output_path}/{design_name}')
-    subprocess.run(['python3', f'{precheck_root}/checks/lvs_check/lvs.py', '-g', f'{design_dir}', '-o', f'{output_path}', '-d', f'{design_name}', '-c', f'{config_file}', '-p', f'{pdk_root}/{pdk}', '-t', f'{tag}'], cwd=precheck_root)
+    if tag:
+        subprocess.run(['python3', f'{precheck_root}/checks/lvs_check/lvs.py', '-g', f'{design_dir}', '-o', f'{output_path}', '-d', f'{design_name}', '-c', f'{config_file}', '-p', f'{pdk_root}/{pdk}', '-t', f'{tag}'], cwd=precheck_root)
+    else:
+        subprocess.run(['python3', f'{precheck_root}/checks/lvs_check/lvs.py', '-g', f'{design_dir}', '-o', f'{output_path}', '-d', f'{design_name}', '-c', f'{config_file}', '-p', f'{pdk_root}/{pdk}'], cwd=precheck_root)
 
 def xor(console, design_name, design1, design2):
     design1 = os.path.abspath(design1)
