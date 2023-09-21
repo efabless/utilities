@@ -260,7 +260,7 @@ def def_to_gds(console, def_file, pdk, pdk_root, output, extra_gds=None, extra_l
                 exit(1)
             else:
                 lef_export = lef_export + lef + " "
-        magic_env['EXTRA_LEF'] = f'"{lef_export.strip()}"'
+        magic_env['EXTRA_LEFS'] = f'"{lef_export.strip()}"'
     if extra_gds:
         gds_export = ""
         for gds in extra_gds:
