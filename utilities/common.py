@@ -269,7 +269,7 @@ def def_to_gds(console, def_file, pdk, pdk_root, output, extra_gds=None, extra_l
                 exit(1)
             else:
                 gds_export = gds_export + gds + " "
-        magic_env['EXTRA_GDS'] = f'"{gds_export.strip()}"'
+        magic_env['EXTRA_GDS_FILES'] = f'"{gds_export.strip()}"'
     magic_env.update(os.environ)
     magic_cmd = [
         "magic", "-noconsole", "-dnull", "-rcfile", f"{pdk_root}/{pdk}/libs.tech/magic/{pdk}.magicrc", f"{os.path.dirname(os.path.abspath(__file__))}/helper_lib/def_to_all.tcl"
