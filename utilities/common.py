@@ -189,7 +189,7 @@ def mag_to_def(
     ]
     subprocess.run(magic_cmd, env=magic_env)
 
-def drc(console, gds_file, output_path):
+def drc(console, gds_file, output_path, pdk):
     gds_file = os.path.abspath(gds_file)
     output_path = os.path.abspath(output_path)
     precheck_root = os.path.join(os.path.expanduser("~"), "mpw_precheck")
@@ -201,7 +201,7 @@ def drc(console, gds_file, output_path):
         os.mkdir(f'{output_path}/outputs')
     if not os.path.exists(f'{output_path}/outputs/reports'):
         os.mkdir(f'{output_path}/outputs/reports')
-    subprocess.run(['python3', f'{precheck_root}/checks/drc_checks/klayout/klayout_gds_drc_check.py', '-g', f'{gds_file}', '-o', f'{output_path}', '-f', '-b', '-og'])
+    subprocess.run(['python3', f'{precheck_root}/checks/drc_checks/klayout/klayout_gds_drc_check.py', '-g', f'{gds_file}', '-o', f'{output_path}', '-f', '-b', '-og', '-p', f'{pdk}'])
 
 def lvs(console, design_dir, output_path, design_name, config_file, pdk_root, pdk, tag):
     design_dir = os.path.abspath(design_dir)

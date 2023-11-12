@@ -14,5 +14,5 @@ if { $::env(DEF_TO_LEF) } {
 }
 select top cell
 expand
-lef write $::env(OUTPUT)/[file rootname [file tail $::env(MACRO)]].lef
+lef write $::env(OUTPUT)/[file rootname [file tail $::env(MACRO)]].lef -hide
 quit -noprompt

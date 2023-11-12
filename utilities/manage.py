@@ -93,10 +93,11 @@ def gds_to_def_cmd(gds_file, output, pdk_root, pdk):
 @click.command("drc", help="runs klayout DRC")
 @click.argument("gds_file")
 @click.option("--output", required=True, help="path to destination output reports")
-def drc_cmd(gds_file, output):
+@click.option("--pdk", required=True, help="pdk family")
+def drc_cmd(gds_file, output, pdk):
     console = Console()
     drc(
-        console, gds_file, output
+        console, gds_file, output, pdk
     )
 
 @click.command("lvs", help="runs LVS")
